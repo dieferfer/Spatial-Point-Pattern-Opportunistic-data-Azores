@@ -1,0 +1,85 @@
+
+\documentclass[12pt]{article}
+\usepackage[a4paper, margin=2.5cm]{geometry}
+\usepackage{hyperref}
+\usepackage{xcolor}
+\usepackage{fontspec}
+\usepackage{titlesec}
+\setmainfont{Latin Modern Roman}
+
+\titleformat{\section}{\large\bfseries}{\thesection}{1em}{}
+\titleformat{\subsection}{\normalsize\bfseries}{\thesubsection}{1em}{}
+
+\title{\textbf{README -- Spatial Point Pattern Models for Opportunistic Cetacean Data in the Azores}}
+\date{}
+
+\begin{document}
+
+\maketitle
+
+\section*{Project Overview}
+This repository contains the R code and resources used in the Master's thesis:
+
+\textbf{``Using Bayesian Spatial Point Processes to Model Cetacean Distribution from Presence-Only Data''} \\
+\textit{Master’s Program in Biostatistics – Universitat de València (2024/2025)} \\
+Author: \textbf{Diego Fernández Fernández}
+
+\bigskip
+
+The project explores and models the spatial distribution of cetaceans using Bayesian Log-Gaussian Cox Processes (LGCP) based on opportunistic presence-only data. The focus is on the Azores archipelago.
+
+\section*{Repository Structure}
+\begin{itemize}
+  \item \texttt{01\_define\_area.R}: Define and simplify the study area
+  \item \texttt{02\_download\_occurrences.R}: Download and clean OBIS / GBIF data
+  \item \texttt{03\_env\_variables.R}: Download and process environmental .nc data
+  \item \texttt{04\_extract\_covariates.R}: Link observations with environmental variables
+  \item \texttt{05\_model\_LGCP.R}: Fit LGCP models with INLA/inlabru
+  \item \texttt{06\_predict\_intensity.R}: Generate predictive maps
+  \item \texttt{/outputs/}: Maps and model summaries
+  \item \texttt{/data/}: Raw and processed datasets
+\end{itemize}
+
+\section*{Methods Summary}
+\begin{itemize}
+  \item \textbf{Model}: Log-Gaussian Cox Process (LGCP)
+  \item \textbf{Inference}: Integrated Nested Laplace Approximation (INLA)
+  \item \textbf{Software}: \texttt{R}, \texttt{inlabru}
+  \item \textbf{Covariates}: Bathymetry, SST, Salinity, Mixed Layer Depth, Zonal Currents
+  \item \textbf{Data Source}: \href{https://marine.copernicus.eu/}{Copernicus Marine Service}
+  \item \textbf{Species}: \textit{Delphinus delphis}, \textit{Physeter macrocephalus}
+\end{itemize}
+
+\section*{Getting Started}
+Follow the scripts in numeric order from \texttt{01} to \texttt{06}. You will need:
+
+\subsection*{Requirements}
+\begin{itemize}
+  \item \texttt{R >= 4.3}
+  \item Required packages: \texttt{sf, terra, tidyverse, ncdf4, stars, lubridate, viridis}
+  \item For INLA and inlabru:
+\begin{verbatim}
+install.packages("INLA", repos = c(getOption("repos"),
+  INLA = "https://inla.r-inla-download.org/R/stable"))
+install.packages("inlabru")
+\end{verbatim}
+\end{itemize}
+
+\section*{License}
+This work is licensed under the Creative Commons Attribution-NonCommercial 4.0 International License (CC BY-NC 4.0).
+
+\section*{Acknowledgements}
+\begin{itemize}
+  \item Universitat de València – Facultad de Ciencias Matemáticas
+  \item Supervisors: David V. Conesa Guillén, Antonio López Quílez
+  \item Project REDUCE (IEO-CSIC)
+\end{itemize}
+
+\section*{Contact}
+For questions or collaboration ideas, reach out via GitHub or LinkedIn.
+
+\bigskip
+
+\textit{“Modeling where science meets the sea.”} 🌊
+
+\end{document}
