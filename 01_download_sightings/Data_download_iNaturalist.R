@@ -27,5 +27,3 @@ observations <- get_inat_obs(
 # Save raw data to Excel
 write_xlsx(observations, path = "Products/0_RawData/cetaceans_iNat_raw_2025-01-13.xlsx")
 
-# Optional: Reload data later
-# observations <- read_excel("Products/0_RawData/cetaceans_iNat_raw_2025-01-13.xlsx")

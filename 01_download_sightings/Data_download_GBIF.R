@@ -55,11 +55,6 @@ gbif_data <- occ_download_get("0066134-241126133413365") %>%
 # Save as Excel
 write_xlsx(gbif_data, path = "Products/0_RawData/cetaceans_gbif_raw_2025-01-13.xlsx")
 
-# Optional: Read again later
-# gbif_data <- read_excel("Products/0_RawData/cetaceans_gbif_raw_2025-01-13.xlsx")
-
-
-
 # Citation (Required by GBIF) ---------------------------------------------
 
 # Accessed: 2025-01-13

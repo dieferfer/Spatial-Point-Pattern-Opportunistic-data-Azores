@@ -22,5 +22,3 @@ cetaceans_obis <- occurrence("Cetacea", geometry = simplified_wkt)
 # Save raw data to Excel
 write_xlsx(cetaceans_obis, path = "Products/0_RawData/cetaceans_OBIS_raw_2025-01-13.xlsx")
 
-# Optional: Reload data later
-# cetaceans_obis <- read_excel("Products/0_RawData/cetaceans_OBIS_raw_2025-01-13.xlsx")
