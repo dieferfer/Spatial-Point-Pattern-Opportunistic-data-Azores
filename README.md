@@ -21,6 +21,7 @@ Each folder is numbered in execution order:
 - `03_env_variables.R`: Download and process environmental `.nc` data
 - `04_model_LGCP.R`: Fit LGCP models and get prediction maps
 - `outputs/`: Maps and model summaries
+- `products/`: Downloaded, filtered and final data used for the analysis
 
 ---
 
