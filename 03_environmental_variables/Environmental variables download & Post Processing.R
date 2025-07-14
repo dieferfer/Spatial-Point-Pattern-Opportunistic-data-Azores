@@ -4,9 +4,8 @@
 # Description: This script (adapted from David Ruiz github) downloads 3D environmental variables from CMEMS,
 # stores them in a structured folder system, and computes monthly and seasonal means.
 
-# ===============================
-# 1. Load required libraries
-# ===============================
+# 1. Load required libraries ----------------------------------------------
+
 library(reticulate)
 library(lubridate)
 library(dplyr)
@@ -14,18 +13,16 @@ library(readr)
 library(stringr)
 library(terra)
 
-# ===============================
-# 2. Load catalog and define paths
-# ===============================
+# 2. Load catalog and define paths ----------------------------------------
+
 input_data <- "../Environmental Variables"
 catalog <- read_delim(file.path(input_data, "catalog_env_var.csv"), delim = ";", 
                       escape_double = FALSE, trim_ws = TRUE)
 catalog <- catalog %>%
   mutate(across(c(xmin, xmax, ymin, ymax, depth_min, depth_max), ~as.numeric(gsub(",", ".", .))))
 
-# ===============================
-# 3. CMEMS login (via reticulate)
-# ===============================
+# 3. CMEMS login (via reticulate) -----------------------------------------
+
 use_virtualenv("cmems", required = TRUE)
 cm <- import("copernicusmarine")
 
@@ -34,9 +31,8 @@ username <- "Enter CMEMS username: "
 password <- "Enter CMEMS password: "
 cm$login(username, password)
 
-# ===============================
-# 4. Download full .nc file per variable
-# ===============================
+# 4. Download full .nc file per variable ----------------------------------
+
 destination_folder <- file.path(input_data, "cmems")
 if (!dir.exists(destination_folder)) dir.create(destination_folder, recursive = TRUE)
 
@@ -72,9 +68,9 @@ for (i in 1:nrow(catalog)) {
   )
 }
 
-# ===============================
-# 5. Compute interannual monthly means
-# ===============================
+
+# 5. Compute interannual monthly means ------------------------------------
+
 monthly_dir <- file.path(destination_folder, "monthly_means")
 dir.create(monthly_dir, showWarnings = FALSE)
 
@@ -96,9 +92,8 @@ calc_monthly_mean <- function(nc_path) {
 
 invisible(lapply(nc_files, calc_monthly_mean))
 
-# ===============================
-# 6. Compute seasonal means (Winter/Summer)
-# ===============================
+# 6. Compute seasonal means (Winter/Summer) -------------------------------
+
 seasonal_dir <- file.path(destination_folder, "seasonal_means")
 dir.create(seasonal_dir, showWarnings = FALSE)
 
@@ -131,9 +126,8 @@ calc_seasonal_mean <- function(monthly_path) {
 monthly_files <- list.files(monthly_dir, pattern = "_monthly_mean\\.nc$", full.names = TRUE)
 invisible(lapply(monthly_files, calc_seasonal_mean))
 
-# ===============================
-# 7. Quality control summary
-# ===============================
+# 7. Quality control summary ----------------------------------------------
+
 qc_check <- function(path) {
   r <- tryCatch(rast(path), error = function(e) return(NULL))
   if (is.null(r)) return(data.frame(file = basename(path), error = "Failed to load"))
