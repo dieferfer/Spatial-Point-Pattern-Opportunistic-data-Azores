@@ -43,7 +43,7 @@ To run the project, follow the script order from `01` to `04`. You’ll need:
 ### Requirements
 
 - R version >= 4.3
-- R packages: `sf`, `terra`, `tidyverse`, `ncdf4`, `stars`, `lubridate`, `viridis`
+- R packages: `inlabru`, `fmesher`, `sf`, `sp`, `terra`, `tidyverse`, `ncdf4`, `stars`, `lubridate`, `viridis`, `dplyr`, `rgibf`, `robis`, `rinat`
 - INLA:  
 ```r
 install.packages("INLA", repos = c(getOption("repos"),
