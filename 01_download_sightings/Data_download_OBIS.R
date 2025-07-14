@@ -1,4 +1,5 @@
-# 1. Load packages & Shapefile --------------------------------------------
+
+# 1. Load Required Packages and Study Area Shapefile ----------------------
 
 library(robis)
 library(sf)
@@ -7,14 +8,19 @@ library(readxl)
 library(writexl)
 library(dplyr)
 
-shape <- read_sf("./Study Area/REDUCE_NEW_study_area.shp")
-shape <- read_sf("./Study Area/PhD_studyarea/phd_studyarea.shp")
+# Load study area shapefile (adjust path as needed)
+study_area <- read_sf("./Study Area/PhD_studyarea/phd_studyarea.shp")
 
-# 2. Data download --------------------------------------------------------
 
-# This function gathers occurrence data for the specified taxon (it can be at species, genus, family, etc. level)
-cetaceans_obis <- occurrence("Cetacea", geometry = simplified_wkt) 
+# 2. Download OBIS Cetacean Occurrence Records ----------------------------
 
-write_xlsx(cetaceans_obis, path = "Products/0_RawData/cetaceansobis_raw_13012025.xlsx")
-cetaceans_obis <- read_excel("Products/0_RawData/cetaceansobis_raw_13012025.xlsx")
+# Download cetacean occurrences from OBIS using a simplified WKT geometry
+# 'simplified_wkt' must be a WKT string (geometry in EPSG:4326)
 
+cetaceans_obis <- occurrence("Cetacea", geometry = simplified_wkt)
+
+# Save raw data to Excel
+write_xlsx(cetaceans_obis, path = "Products/0_RawData/cetaceans_OBIS_raw_2025-01-13.xlsx")
+
+# Optional: Reload data later
+# cetaceans_obis <- read_excel("Products/0_RawData/cetaceans_OBIS_raw_2025-01-13.xlsx")

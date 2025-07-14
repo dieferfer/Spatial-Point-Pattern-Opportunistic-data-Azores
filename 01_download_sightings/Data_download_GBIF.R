@@ -1,4 +1,5 @@
-# 1. Load packages & Shapefile --------------------------------------------
+
+# 1. Load Required Packages and Study Area Shapefile ----------------------
 
 library(rgbif)
 library(sf)
@@ -7,48 +8,61 @@ library(readxl)
 library(writexl)
 library(dplyr)
 
-shape <- read_sf("./Study Area/REDUCE_NEW_study_area.shp")
-shape <- read_sf("./Study Area/PhD_studyarea/phd_studyarea.shp")
+# Load study area shapefile (adjust path as needed)
+study_area <- read_sf("./Study Area/study_area_azores.shp")
 
-# 2. GBIF Account set up in .Renviron -------------------------------------
+# 2. GBIF Account Setup (only needed once) --------------------------------
 
-install.packages("usethis")
-usethis::edit_r_environ()
+# If not installed yet:
+# install.packages("usethis")
 
-# When ran, a new window (called ".Renviron") will appear. Here you need to type the credentials of your GBIF account:
-# GBIF_USER="diegoferfer"
-# GBIF_PWD="contraseñasegura1" if you are loging with google, you need to reset your gbif pwd with the "forgot password" option and use the new one here
-# GBIF_EMAIL="diegoferfer0525@gmail.com"
+# Open .Renviron to add your GBIF credentials:
+# usethis::edit_r_environ()
 
-# Once you have filled your credentials, click in the "Save" button in the .Renviron window and restart R.
+# Example credentials (add these manually to the file):
+# GBIF_USER="your_username"
+# GBIF_PWD="your_password"
+# GBIF_EMAIL="your_email@example.com"
 
-Sys.getenv("GBIF_PWD")
+# After saving the file, restart R and check that credentials were loaded:
 Sys.getenv("GBIF_USER")
+Sys.getenv("GBIF_PWD")
 
-# with this code you can check if the credentials entered are ok without opening the .Renviron window. After restarting the R session and checking if your credentials have been implemented you should be able download data from GBIF. 
+# 3. GBIF Data Download (Cetacea occurrences) -----------------------------
 
+# Retrieve taxon key for Cetacea
+taxon_key <- name_backbone(name = "Cetacea")$usageKey
 
-# 3. Data download -----------------------------
+# Prepare WKT geometry for spatial filter (must be < 1500 characters)
+# simplified_wkt <- your_simplified_wkt_string
 
-taxonKey <- name_backbone(name = "Cetacea")$usageKey
-# Every taxon has its own key. With the function from above you can get the taxonkey of the species, family, order, etc. desired. 
-
+# Submit download request (runs on GBIF servers)
 occ_download(
-  pred_and(pred("taxonKey", taxonKey), pred_within(simplified_wkt))
+  pred_and(
+    pred("taxonKey", taxon_key),
+    pred_within(simplified_wkt)
+  )
 )
 
-# The occ_download() function will place the download request and then execute it in the GBIF servers. In this case we asked for occurrence data of the taxon "Cetacea" within the limits of our simplified shapefile. Once you run this download request some text will appear in your console, giving you the information of the download and two different lines of code: the first one is to check the status of the download (the download happends in the background, could last from 15 minutes to 3 hours). The second code is to import the downloaded data in R (the zip file will be stored in your directory, while the function will unzip the files and load them in your environment).
+# Once submitted, you will get a download key (example below)
+# Check download status (may take 15 minutes to several hours)
+occ_download_wait("0066134-241126133413365")
 
-# Citation at 13/01/2025
-# https://www.gbif.org/citation-guidelines
-# DOI: 10.15468/dl.e8scsn
-# Citation:
-#   GBIF Occurrence Download https://doi.org/10.15468/dl.e8scsn Accessed from R via rgbif (https://github.com/ropensci/rgbif) on 2025-01-13
-
-occ_download_wait('0066134-241126133413365') # to check the status of the download 
-d <- occ_download_get('0066134-241126133413365') %>%
+# Download and import data
+gbif_data <- occ_download_get("0066134-241126133413365") %>%
   occ_download_import()
-cetaceans_gbif <- d
-write_xlsx(cetaceans_gbif, path = "Products/0_RawData/cetaceansgbif_raw_13012025.xlsx")
-cetaceans_gbif <- read_excel("Products/0_RawData/cetaceansgbif_raw_13012025.xlsx")
 
+# Save as Excel
+write_xlsx(gbif_data, path = "Products/0_RawData/cetaceans_gbif_raw_2025-01-13.xlsx")
+
+# Optional: Read again later
+# gbif_data <- read_excel("Products/0_RawData/cetaceans_gbif_raw_2025-01-13.xlsx")
+
+
+
+# Citation (Required by GBIF) ---------------------------------------------
+
+# Accessed: 2025-01-13
+# DOI: 10.15468/dl.e8scsn
+# Citation: GBIF Occurrence Download https://doi.org/10.15468/dl.e8scsn 
+# Accessed via rgbif (https://github.com/ropensci/rgbif)

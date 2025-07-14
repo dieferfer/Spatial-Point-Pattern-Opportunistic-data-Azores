@@ -1,4 +1,5 @@
-# 1. Load packages & Shapefile --------------------------------------------
+
+# 1. Load Required Packages and Study Area Shapefile ----------------------
 
 library(rinat)
 library(sf)
@@ -8,15 +9,23 @@ library(writexl)
 library(dplyr)
 library(lubridate)
 
-shape <- read_sf("./Study Area/REDUCE_NEW_study_area.shp")
-shape <- read_sf("./Study Area/PhD_studyarea/phd_studyarea.shp")
+# Load study area shapefile (adjust path as needed)
+study_area <- read_sf("./Study Area/PhD_studyarea/phd_studyarea.shp")
 
-# 2. Data download --------------------------------------------------------
+# 2. Download iNaturalist Cetacean Observations ---------------------------
 
-observations <- get_inat_obs(taxon_name = "Cetaceans",
-                             geo = TRUE,
-                             bounds = simplified_shape,
-                             maxresults = 10000)
-write_xlsx(observations, path = "Products/0_RawData/cetaceansiNat_raw_13012025.xlsx")
-observations <- read_excel("Products/0_RawData/cetaceansiNat_raw_13012025.xlsx")
+# Download up to 10,000 iNaturalist observations for "Cetaceans" within study area
+# 'simplified_shape' must be a bounding box or spatial object with CRS
 
+observations <- get_inat_obs(
+  taxon_name = "Cetaceans",
+  geo = TRUE,
+  bounds = simplified_shape,  # You need to define this spatial bounding box beforehand
+  maxresults = 10000
+)
+
+# Save raw data to Excel
+write_xlsx(observations, path = "Products/0_RawData/cetaceans_iNat_raw_2025-01-13.xlsx")
+
+# Optional: Reload data later
+# observations <- read_excel("Products/0_RawData/cetaceans_iNat_raw_2025-01-13.xlsx")
