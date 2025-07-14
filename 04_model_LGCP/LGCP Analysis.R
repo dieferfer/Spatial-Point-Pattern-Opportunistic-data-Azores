@@ -1,14 +1,14 @@
-# ====================================================
+
 # Spatial LGCP Script for Cetaceans in the Azores
 # Author: Diego Fernández-Fernández
 # Date: 14/07/2025
 # Description: Full workflow to prepare spatial data,
-# interpolate covariates, estimate effort, and fit LGCP models
-# ====================================================
+# interpolate covariates, estimate effort, fit LGCP models and 
+# predict sightings intensity.
 
-# ===============================
-# 1. Load Required Libraries
-# ===============================
+
+# 1. Load Required Libraries --------------------------------------------
+
 library(dplyr)
 library(tidyr)
 library(sf)
@@ -22,9 +22,8 @@ library(viridis)
 library(concaveman)
 library(sp)
 
-# ===============================
-# 2. Load Study Area and Observations
-# ===============================
+# 2. Load Study Area and Observations -------------------------------------
+
 setwd("..")
 study_area <- read_sf("./Study Area/ECS/study_area_ECS.shp") %>% st_transform(4326)
 cetacean_data <- read.csv("data_ecs_env.csv")
@@ -33,9 +32,8 @@ cetacean_data <- read.csv("data_ecs_env.csv")
 dde <- cetacean_data %>% filter(scientificName == "Delphinus delphis")
 pma <- cetacean_data %>% filter(scientificName == "Physeter macrocephalus")
 
-# ===============================
-# 3. Crop Study Area to Azores
-# ===============================
+# 3. Crop Study Area to Azores --------------------------------------------
+
 crs_utm28n_km <- 'PROJCRS["unknown",
     BASEGEOGCRS["unknown",
         DATUM["World Geodetic System 1984",
@@ -83,9 +81,8 @@ study_area_km <- study_area_crop
 
 st_write(study_area_km, "./Study Area/ECS/study_area_azores.shp", delete_layer = TRUE)
 
-# ===============================
-# 4. Mesh Construction
-# ===============================
+# 4. Mesh Construction ----------------------------------------------------
+
 bdry <- inla.sp2segment(study_area_km)
 mesh <- fm_mesh_2d_inla(
   boundary = list(bdry), 
@@ -96,9 +93,8 @@ mesh <- fm_mesh_2d_inla(
 )
 saveRDS(mesh, "./Spatial Point Patern Analysis/mesh_inla_azores.rds")
 
-# ===============================
-# 5. Create Integration Points
-# ===============================
+# 5. Create Integration Points --------------------------------------------
+
 xx <- range(mesh$loc[,1])
 yy <- range(mesh$loc[,2])
 new_xy <- expand.grid(seq(xx[1], xx[2], 1), seq(yy[1], yy[2], 1))
@@ -106,18 +102,16 @@ A <- inla.spde.make.A(mesh = mesh, loc = new_xy)
 ips <- fm_int(mesh)
 saveRDS(ips, "../Environmental Variables/cmems/seasonal_ips/ips_azores.rds")
 
-# ===============================
-# 6. SPDE Model Definition
-# ===============================
+# 6. SPDE Model Definition ----------------------------------------------
+
 spde <- inla.spde2.pcmatern(
   mesh = mesh, 
   prior.range = c(800, 0.8), 
   prior.sigma = c(6, 0.01)
 )
 
-# ===============================
-# 7. Covariate Interpolation (example: mlotst summer)
-# ===============================
+# 7. Covariate Interpolation (example: mlotst summer) ---------------------
+
 var_name <- "mlotst"
 season <- "summer"
 raster_path <- paste0("../Environmental Variables/cmems/seasonal_means/", var_name, "_", season,"_mean.nc")
@@ -161,9 +155,9 @@ for (v in vars) {
   }
 }
 
-# ===============================
-# 8. Bathymetry Interpolation
-# ===============================
+
+# 8. Bathymetry Interpolation ---------------------------------------------
+
 bathy_path <- "C:/Users/ichu3/Dropbox/Diego/REDUCE/Environmental Variables/gebco_2024_tid_geotiff/gebco_2024_ecs.tif"
 bathy <- rast(bathy_path)
 bathy_proj <- project(bathy, crs_utm28n_km)
@@ -189,9 +183,7 @@ bathy_raster_ips <- terra::rast(SpatialPixelsDataFrame(
 ))
 saveRDS(bathy_raster_ips, "C:/Users/ichu3/Dropbox/Diego/REDUCE/Environmental Variables/cmems/seasonal_ips/bathymetry_rast_centscaled_azores.rds")
 
-# ===============================
-# 9. Format Observations as sf
-# ===============================
+# 9. Format Observations as sf --------------------------------------------
 dde_sf <- st_as_sf(dde, coords = c("lon", "lat"), crs = 4258) %>%
   st_transform(crs_utm28n_km) %>%
   st_intersection(study_area_km)
@@ -205,9 +197,8 @@ write.csv(dde_sf, "./Spatial Point Patern Analysis/dde_azores.csv")
 dde_sf <- read.csv("./Spatial Point Patern Analysis/dde_azores.csv")
 dde_sf <- st_as_sf(dde_sf, coords = c("lon", "lat"), crs = crs_utm28n_km)
 
-# ===============================
-# 10. Define Seasonal Subsets
-# ===============================
+# 10. Define Seasonal Subsets ---------------------------------------------
+
 winter_months <- c(12, 1, 2, 10, 11, 3)
 summer_months <- c(4, 5, 6, 7, 8, 9)
 
@@ -216,9 +207,7 @@ dde_longsummer <- dde_sf %>% filter(month %in% summer_months)
 
 # repeat for PMA
 
-# ===============================
-# 11. Generate Samplers and Estimate Effort (Winter)
-# ===============================
+# 11. Generate Samplers and Estimate Effort (Winter) ----------------------
 
 # Define full seasonal windows
 longsummer <- c(4, 5, 6, 7, 8, 9)
@@ -260,9 +249,7 @@ hull_winter <- st_sf(geometry = hull_sfc)
 saveRDS(hull_winter, file = "./hull_winter.rds")
 # Repeat for Summer season 
 
-# ===============================
-# 12. Load Environmental Covariates and Detection Function
-# ===============================
+# 12. Load Environmental Covariates and Detection Function ----------------
 
 # Directory where .rds rasters are stored
 rds_dir <- "../Environmental Variables/cmems/seasonal_ips"
@@ -307,10 +294,8 @@ log_detect <- function(xy, t1, t2) {
 hull_winter <- readRDS("./hull_winter.rds")
 hull_summer <- readRDS("./hull_summer.rds")
 
+# 13. Fit LGCP Model for Sampling Effort (Winter) -------------------------
 
-# ===============================
-# 13. Fit LGCP Model for Sampling Effort (Winter)
-# ===============================
 cmp_effort <- ~ 0 + Intercept(1, mean.linear = 0, prec.linear = 0.1) +
   SPDE(main = geometry, model = spde)
 
@@ -353,9 +338,8 @@ effort_rast_ips <- terra::rast(SpatialPixelsDataFrame(
 saveRDS(effort_rast_ips, "../Environmental Variables/cmems/seasonal_ips/effort_winter_rast_azores.rds")
 # Repeat for Summer season 
 
-# ===============================
-# 14. LGCP Model Fit (Winter Example)
-# ===============================
+# 14. LGCP Model Fit (Winter Example) -------------------------------------
+
 cmp <- ~ 0 + Intercept(1, 
                        mean.linear = 0, 
                        prec.linear = 0.1) +
@@ -392,17 +376,15 @@ fit_lgcp <- lgcp(components = cmp,
 
 saveRDS(fit_lgcp, "./Spatial Point Patern Analysis/models/model_lgcp_winter.RDS")
 
-# ===============================
-# 15. Prediction Grid and Extract Covariates
-# ===============================
+# 15. Prediction Grid and Extract Covariates ------------------------------
+
 pxl <- fm_pixels(mesh, dim = c(500, 500), mask = study_area_km)
 pxl$bathy <- terra::extract(bathy, vect(pxl))[,2]
 
 pred <- predict(fit_lgcp, newdata = pxl, formula = ~ exp(Intercept + SPDE + bathy))
 
-# ===============================
-# 16. Plot Predicted Intensity
-# ===============================
+# 16. Plot Predicted Intensity --------------------------------------------
+
 if (requireNamespace("patchwork", quietly = TRUE)) library(patchwork)
 
 ggplot() +
@@ -421,9 +403,8 @@ ggplot() +
         panel.grid = element_line(color = "grey90"),
         panel.spacing = unit(1, "lines"))
 
-# =================================
-# 17. Plot Posterior Distribution
-# =================================
+# 17. Plot Posterior Distribution -----------------------------------------
+
 marginals <- list(
   Intercept = fit_lgcp$marginals.fixed$Intercept,
   bathy = fit_lgcp$marginals.fixed$bathy,
