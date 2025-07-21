@@ -24,7 +24,6 @@ library(sp)
 
 # 2. Load Study Area and Observations -------------------------------------
 
-setwd("..")
 study_area <- read_sf("./Study Area/ECS/study_area_ECS.shp") %>% st_transform(4326)
 cetacean_data <- read.csv("data_ecs_env.csv")
 
@@ -80,6 +79,8 @@ study_area_crop <- st_intersection(study_area, clip_box)
 study_area_km <- study_area_crop
 
 st_write(study_area_km, "./Study Area/ECS/study_area_azores.shp", delete_layer = TRUE)
+study_area_km <- read_sf("./00_study_area/study_area_azores.shp")
+study_area_km <- st_transform(study_area_km, crs = st_crs(crs_utm28n_km))
 
 # 4. Mesh Construction ----------------------------------------------------
 
@@ -158,7 +159,7 @@ for (v in vars) {
 
 # 8. Bathymetry Interpolation ---------------------------------------------
 
-bathy_path <- "C:/Users/ichu3/Dropbox/Diego/REDUCE/Environmental Variables/gebco_2024_tid_geotiff/gebco_2024_ecs.tif"
+bathy_path <- "./gebco_2024_ecs.tif"
 bathy <- rast(bathy_path)
 bathy_proj <- project(bathy, crs_utm28n_km)
 bathy_crop <- crop(bathy_proj, vect(study_area_km))
@@ -181,7 +182,7 @@ bathy_raster_ips <- terra::rast(SpatialPixelsDataFrame(
   data = data.frame(bathymetry = as.vector(bathy_vals_scaled)),
   proj4string = CRS(crs_utm28n_km)
 ))
-saveRDS(bathy_raster_ips, "C:/Users/ichu3/Dropbox/Diego/REDUCE/Environmental Variables/cmems/seasonal_ips/bathymetry_rast_centscaled_azores.rds")
+saveRDS(bathy_raster_ips, "./bathymetry_rast_centscaled_azores.rds")
 
 # 9. Format Observations as sf --------------------------------------------
 dde_sf <- st_as_sf(dde, coords = c("lon", "lat"), crs = 4258) %>%
@@ -192,9 +193,9 @@ dde_sf$lon <- st_coordinates(dde_sf)[,1]
 dde_sf$lat <- st_coordinates(dde_sf)[,2]
 dde_sf <- st_drop_geometry(dde_sf)
 
-write.csv(dde_sf, "./Spatial Point Patern Analysis/dde_azores.csv")
+write.csv(dde_sf, "./products/2_L1_Azores/dde_azores.csv")
 
-dde_sf <- read.csv("./Spatial Point Patern Analysis/dde_azores.csv")
+dde_sf <- read.csv("./products/2_L1_Azores/dde_azores.csv")
 dde_sf <- st_as_sf(dde_sf, coords = c("lon", "lat"), crs = crs_utm28n_km)
 
 # 10. Define Seasonal Subsets ---------------------------------------------
@@ -296,8 +297,11 @@ hull_summer <- readRDS("./hull_summer.rds")
 
 # 13. Fit LGCP Model for Sampling Effort (Winter) -------------------------
 
-cmp_effort <- ~ 0 + Intercept(1, mean.linear = 0, prec.linear = 0.1) +
-  SPDE(main = geometry, model = spde)
+cmp_effort <- ~ 0 + Intercept(1, 
+                              mean.linear = 0, 
+                              prec.linear = 0.01) +
+                    SPDE(main = geometry, 
+                         model = spde)
 
 formula_effort <- geometry ~ Intercept + SPDE
 likelihood_effort <- like("cp",
@@ -345,7 +349,7 @@ cmp <- ~ 0 + Intercept(1,
                        prec.linear = 0.1) +
               SPDE(main = geometry, 
                    model = spde) +
-              bathy(main = bathy_scaled, 
+              bathy(main = bathy_azores, 
                     mean.linear = 0,
                     prec.linear = 1) +
               zo(main = zo_summer_rast, 
@@ -367,14 +371,15 @@ fit_lgcp <- lgcp(components = cmp,
                  formula = form,
                  data = dde_longwinter,
                  domain = list(geometry = mesh),
-                 samplers = study_area_km,
+                 samplers = hull_winter,
                  options = list(
                    verbose = TRUE,
                    bru_max_iter = 20,
                    control.compute = list(dic = TRUE, waic = TRUE, cpo = TRUE)
                  ))
-
-saveRDS(fit_lgcp, "./Spatial Point Patern Analysis/models/model_lgcp_winter.RDS")
+lcpo_fit <- -sum(log(fit_lgcp$cpo$cpo), na.rm = TRUE)
+lcpo_fit
+saveRDS(fit_lgcp, "./Spatial Point Patern Analysis/models/model_lgcp_summer.RDS")
 
 # 15. Prediction Grid and Extract Covariates ------------------------------
 
